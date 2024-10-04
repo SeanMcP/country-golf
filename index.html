@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Country Golf</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <style>
+        body {
+            margin: 0;
+        }
+
+        main {
+            display: grid;
+            grid-template-rows: 1fr min-content;
+            height: 100vh;
+        }
+        #map {
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <div id="map"></div>
+        <form>
+            <label>
+                Direction
+                <select name="direction" required>
+                    <option value="N">North</option>
+                    <option value="NE">Northeast</option>
+                    <option value="E">East</option>
+                    <option value="SE">Southeast</option>
+                    <option value="S">South</option>
+                    <option value="SW">Southwest</option>
+                    <option value="W">West</option>
+                    <option value="NW">Northwest</option>
+                </select>
+            </label>
+            <label>
+                Distance (miles)
+                <input inputmode="numeric" name="distance" required type="number" value="200" />
+            </label>
+            <button>Putt</button>
+        </form>
+    </main>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script>
+        const ZOOM = 7;
+        let coordinates = [51.505, -0.09]
+        let map = L.map('map', { dragging: false, scrollWheelZoom: false, zoomControl: false }).setView(coordinates, ZOOM);
+        L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+    </script>
+    <script>
+        const MILES_PER_LATITUDE = 69
+        const MILES_PER_LONGITUDE = 54.6
+
+        let form = document.querySelector('form')
+        form.addEventListener("submit", e => {
+            e.preventDefault();
+            let fd = new FormData(e.target)
+            let distance = parseFloat(fd.get("distance"))
+            let direction = fd.get("direction")
+            
+            switch (direction) {
+                case "N": {
+                    coordinates[0] += distance / MILES_PER_LATITUDE
+                    break;
+                }
+                case "NE": {
+                    let leg = getLegLength(distance)
+                    coordinates[0] += leg / MILES_PER_LATITUDE
+                    coordinates[1] += leg / MILES_PER_LONGITUDE
+                    break;
+                }
+                case "E": {
+                    coordinates[1] += distance / MILES_PER_LONGITUDE
+                    break;
+                }
+                case "SE": {
+                    let leg = getLegLength(distance)
+                    coordinates[0] -= leg / MILES_PER_LATITUDE
+                    coordinates[1] += leg / MILES_PER_LONGITUDE
+                    break;
+                }
+                case "S": {
+                    coordinates[0] -= distance / MILES_PER_LATITUDE
+                    break;
+                }
+                case "SW": {
+                    let leg = getLegLength(distance)
+                    coordinates[0] -= leg / MILES_PER_LATITUDE
+                    coordinates[1] -= leg / MILES_PER_LONGITUDE
+                    break;
+                }
+                case "W": {
+                    coordinates[1] -= distance / MILES_PER_LONGITUDE
+                    break;
+                }
+                case "NW": {
+                    let leg = getLegLength(distance)
+                    coordinates[0] += leg / MILES_PER_LATITUDE
+                    coordinates[1] -= leg / MILES_PER_LONGITUDE
+                    break;
+                }
+            }
+
+            console.log(coordinates)
+            map.flyTo(coordinates, ZOOM)
+        })
+
+        function getLegLength(hypotenuse) {
+            // a^2 + b^2 = c^2; a = b
+            // a^2 + a^2 = c^2
+            // 2a^2 = c^2
+            // a^2 = (c^2)/2
+            // a = sqrt((c^2)/2)
+            return Math.sqrt(Math.pow(hypotenuse, 2) / 2)
+        }
+    </script>
+</body>
+
+</html>
