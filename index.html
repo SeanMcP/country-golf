@@ -9,22 +9,43 @@
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <style>
         body {
+            font-family: system-ui;
             margin: 0;
         }
 
         main {
             display: grid;
-            grid-template-rows: 1fr min-content;
+            grid-template-rows: min-content 1fr min-content;
             height: 100vh;
         }
+
+        header {
+            padding: 1rem;
+            text-align: center;
+        }
+
         #map {
             height: 100%;
+        }
+
+        form {
+            align-items: center;
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+        }
+
+        button,
+        input,
+        select {
+            font: inherit;
         }
     </style>
 </head>
 
 <body>
     <main>
+        <header></header>
         <div id="map"></div>
         <form>
             <label>
@@ -49,6 +70,7 @@
     </main>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
     <script>
         const ZOOM = 7;
         let coordinates = [51.505, -0.09]
@@ -57,10 +79,26 @@
             maxZoom: 19,
             attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         }).addTo(map);
+        L.marker(coordinates).addTo(map).bindPopup("<b>Tee</b>").openPopup()
     </script>
-    <script>
+    <script type="module">
+        import * as ALL from "./countries.js"
+
         const MILES_PER_LATITUDE = 69
         const MILES_PER_LONGITUDE = 54.6
+
+        const HIGHLIGHTED_STYLE = {
+            "color": "#ff7800",
+            "weight": 5,
+            "opacity": 0.65
+        };
+
+        const { LIST, ...COUNTRY_DATA } = ALL
+        let DATA = COUNTRY_DATA[LIST[Math.floor(Math.random() * LIST.length)]]
+        console.log(DATA)
+        document.querySelector('header').textContent = DATA.properties.name
+
+        let strokes = []
 
         let form = document.querySelector('form')
         form.addEventListener("submit", e => {
@@ -68,7 +106,7 @@
             let fd = new FormData(e.target)
             let distance = parseFloat(fd.get("distance"))
             let direction = fd.get("direction")
-            
+
             switch (direction) {
                 case "N": {
                     coordinates[0] += distance / MILES_PER_LATITUDE
@@ -112,8 +150,29 @@
                 }
             }
 
+            strokes.push(coordinates)
+
             console.log(coordinates)
             map.flyTo(coordinates, ZOOM)
+            L.marker(coordinates).addTo(map).bindPopup(`<b>Stroke ${strokes.length}</b>`).openPopup()
+
+            let point = turf.point([coordinates[1], coordinates[0]]);
+            console.log(">>> point", point)
+            let isInside = false
+            try {
+                let polygon = turf.polygon(DATA.geometry.coordinates)
+                isInside = turf.booleanPointInPolygon(point, polygon)
+            } catch {
+                isInside = DATA.geometry.coordinates.some(coords => {
+                    let polygon = turf.polygon(coords);
+                    console.log(">>>", polygon)
+                    return turf.booleanPointInPolygon(point, polygon);
+                })
+            }
+            console.log(">>> isInside", isInside)
+            if (isInside) {
+                setTimeout(() => alert(`You did it in ${strokes.length} strokes!`), 750)
+            }
         })
 
         function getLegLength(hypotenuse) {
@@ -124,6 +183,10 @@
             // a = sqrt((c^2)/2)
             return Math.sqrt(Math.pow(hypotenuse, 2) / 2)
         }
+
+        L.geoJSON({ type: "FeatureCollection", features: [DATA] }, {
+            style: HIGHLIGHTED_STYLE
+        }).addTo(map);
     </script>
 </body>
 
