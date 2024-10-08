@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Country Golf</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <style>
+        body {
+            font-family: system-ui;
+            margin: 0;
+        }
+
+        main {
+            height: 100vh;
+        }
+
+        header {
+            padding: 1rem;
+            text-align: center;
+        }
+
+        #map {
+            height: 80%;
+        }
+
+        form {
+            align-items: center;
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+        }
+
+        button,
+        input,
+        select {
+            font: inherit;
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <div id="map"></div>
+        <div country-buttons></div>
+    </main>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+    <script type="module">
+        import * as shared from "./shared.js"
+        import * as ALL from "./countries.js"
+        const { LIST, ...COUNTRY_DATA } = ALL
+        let DATA = COUNTRY_DATA[LIST[Math.floor(Math.random() * LIST.length)]]
+        console.log(DATA)
+        const ZOOM = 7;
+        let coordinates = [51.505, -0.09]
+        let map = L.map('map', { dragging: true, scrollWheelZoom: true, zoomControl: true }).setView(coordinates, ZOOM);
+        L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+        L.marker(coordinates).addTo(map).bindPopup("<b>Tee</b>").openPopup()
+        L.geoJSON({ type: "FeatureCollection", features: [DATA] }, {
+            style: shared.HIGHLIGHTED_STYLE
+        }).addTo(map);
+
+        let countryButtonsEl = document.querySelector("[country-buttons]")
+        let innerHTML = ""
+        for (let country of LIST) {
+            innerHTML += `<button data-country="${country}">${country}</button>`
+            let data = COUNTRY_DATA[country]
+            console.log(country, turf.center(data))
+        }
+        countryButtonsEl.innerHTML = innerHTML
+        countryButtonsEl.addEventListener("click", (event) => {
+            if (event.target.tagName === "BUTTON") {
+                let data = COUNTRY_DATA[event.target.dataset.country]
+                console.log(data)
+                console.log(turf.center(data))
+            }
+        });
+    </script>
+</body>
+
+</html>
