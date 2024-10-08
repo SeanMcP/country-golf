@@ -58,10 +58,7 @@
         const ZOOM = 7;
         let coordinates = [51.505, -0.09]
         let map = L.map('map', { dragging: true, scrollWheelZoom: true, zoomControl: true }).setView(coordinates, ZOOM);
-        L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        }).addTo(map);
+        shared.addTileLayer(map);
         L.marker(coordinates).addTo(map).bindPopup("<b>Tee</b>").openPopup()
         L.geoJSON({ type: "FeatureCollection", features: [DATA] }, {
             style: shared.HIGHLIGHTED_STYLE
